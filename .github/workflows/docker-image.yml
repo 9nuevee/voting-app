@@ -1,0 +1,36 @@
+name: CI Voting App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-scout-push:
+    name: Build, Scout & Push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:latest ./azure-vote
+
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:latest
+          only-fixed: true
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/voting-app:latest
